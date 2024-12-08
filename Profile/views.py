@@ -1,6 +1,6 @@
+from rest_framework import status
 from .models import PRofileDB
 from rest_framework.response import Response
-from django.contrib import sessions
 from .serializers import ProfileSerializer
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -25,7 +25,7 @@ def getRoutes(request):
         },
         {
             'Endpoint': '/profile/delete',
-            'method': 'DEL',
+            'method': 'DELETE',
             'body': {},
             'description': 'Eliminar el perfil'
         },
@@ -35,35 +35,31 @@ def getRoutes(request):
 class ProfileAPIView(APIView):
     serializer_class = ProfileSerializer
 
-    def get(self, request, format=None):
-        return Response()
+    def get(self, request, pk=None):
+        profile = get_object_or_404(PRofileDB, pk=pk)
+        serializer = self.serializer_class(profile)
+        return Response(status=status.HTTP_200_OK, data=serializer.data)
     
     def post(self, request):
-        serializer = self.serializer_class(data = request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response()
-        else:
-            return Response()
+        # Añadir el usuario autenticado a los datos del perfil
+        data = request.data.copy()
+        data['user'] = request.user.id
         
-    
-    def put(self, request,pk):
-        profile = get_object_or_404(PRofileDB,pk=pk)
-        serializer = ProfileSerializer(profile, data= request.data)
+        serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
-            return Response()
-        return Response()
-    
-    def patch(self, request,pk):
-        profile = get_object_or_404(PRofileDB,pk=pk)
-        serializer = ProfileSerializer(profile, data= request.data, partial = True)
+            return Response(status=status.HTTP_201_CREATED, data=serializer.data)
+        return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
+
+    def patch(self, request, pk):
+        profile = get_object_or_404(PRofileDB, pk=pk)
+        serializer = self.serializer_class(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response()
-        return Response()
+            return Response(status=status.HTTP_202_ACCEPTED, data=serializer.data)
+        return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
     
-    def delete(self, request, pk):
-        profile = get_object_or_404(PRofileDB,pk=pk)
+    def delete(self,request, pk):
+        profile = get_object_or_404(PRofileDB, pk=pk)
         profile.delete()
-        return Response()
+        return Response(status=status.HTTP_204_NO_CONTENT)

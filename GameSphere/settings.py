@@ -80,6 +80,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'GameSphere.wsgi.application'
 ASGI_APPLICATION = 'GameSphere.asgi.application'
+CHANNELS_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "host" : [("localhost")],
+        },
+    },
+}
 
 
 # Database
