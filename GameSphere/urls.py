@@ -7,4 +7,5 @@ urlpatterns = [
     re_path('profile/',include('Profile.urls')),
     re_path('post/',include('Post.urls')),
     re_path('chats/',include('Chats.urls')),
+    re_path('groups/',include('Groups.urls')),
 ]
