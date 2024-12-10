@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from .models import PRofileDB
 from rest_framework.response import Response
@@ -9,28 +8,16 @@ from django.shortcuts import get_object_or_404
 class ProfileAPIView(APIView):
     serializer_class = ProfileSerializer
 
-    def get(self, request):
+    def get_profile(self, user_id):
+        return get_object_or_404(PRofileDB, pk=user_id)
+
+    def get(self, request, pk=None):
         if request.user.is_authenticated:
-            try:
-                pk = request.user.id
-                profile = get_object_or_404(PRofileDB, pk=pk)
-                serializer = self.serializer_class(profile)
-                if serializer.is_valid():
-                    return Response(status=status.HTTP_200_OK, data=serializer.data)
-            except ObjectDoesNotExist:
-                return Response(status=status.HTTP_404_NOT_FOUND)
-        else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-    
-    def get(self, request, pk):
-        if request.user.is_authenticated:
-            try:
-                profile = get_object_or_404(PRofileDB, pk=pk)
-                serializer = self.serializer_class(profile)
-                if serializer.is_valid():
-                    return Response(status=status.HTTP_200_OK, data=serializer.data)
-            except ObjectDoesNotExist:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+            if pk is None:
+                pk = request.user.id  # Use the authenticated user's ID if no pk is provided
+            profile = self.get_profile(pk)
+            serializer = self.serializer_class(profile)
+            return Response(status=status.HTTP_200_OK, data=serializer.data)
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
@@ -49,27 +36,19 @@ class ProfileAPIView(APIView):
 
     def patch(self, request):
         if request.user.is_authenticated:
-            try:
-                pk = request.user.id
-                profile = get_object_or_404(PRofileDB, pk=pk)
-                serializer = self.serializer_class(profile, data=request.data, partial=True)
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response(status=status.HTTP_202_ACCEPTED, data=serializer.data)
-                return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
-            except ObjectDoesNotExist:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+            profile = self.get_profile(request.user.id)
+            serializer = self.serializer_class(profile, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(status=status.HTTP_202_ACCEPTED, data=serializer.data)
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-    
-    def delete(self,request):
+
+    def delete(self, request):
         if request.user.is_authenticated:
-            try:
-                pk = request.user.id
-                profile = get_object_or_404(PRofileDB, pk=pk)
-                profile.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            except ObjectDoesNotExist:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+            profile = self.get_profile(request.user.id)
+            profile.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
