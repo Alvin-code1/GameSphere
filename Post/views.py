@@ -18,7 +18,7 @@ def handle_post_request(request):
             serializer = PostSerializer(post)
             return Response(status=status.HTTP_200_OK, data=serializer.data)
         else:
-            posts = PostDB.objects.filter(user=request.user).order_by('-id')[:10]
+            posts = PostDB.objects.all().order_by('-id')[:10]
             serializer = PostSerializer(posts, many=True)
             return Response(status=status.HTTP_200_OK, data=serializer.data)
 
@@ -49,4 +49,20 @@ def handle_post_request(request):
         post.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': 'Invalid action'})
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def modify_reaction_count(request):
+    pk = request.data.get('pk')
+    action = request.data.get('action')  # 'increase' or 'decrease'
+    
+    post = get_object_or_404(PostDB, pk=pk, user=request.user)
+    
+    if action == 'increase':
+        post.reaction_count += 1
+    elif action == 'decrease':
+        post.reaction_count = max(0, post.reaction_count - 1)  # Prevent negative count
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': 'Invalid action'})
+    
+    post.save()
+    return Response(status=status.HTTP_200_OK, data={'reaction_count': post.reaction_count})
