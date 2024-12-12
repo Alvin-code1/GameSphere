@@ -1,9 +1,11 @@
 from django.db import models
-from Profile.models import PRofileDB
+from django.contrib.auth.models import User
 # Create your models here.
 
 class PostDB(models.Model):
-    profile = models.OneToOneField(PRofileDB, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     create_time = models.DateTimeField(auto_now_add=True)
-    image = models.ImageField(blank=True,null= True)
-    text = models.TextField(max_length=200,null=False,blank=False)
+    image = models.URLField(max_length=200,blank=True,null= True)
+    text = models.TextField(max_length=200,null=True,blank=True)
+    reaction_count = models.IntegerField(default=0)  # Counter for reactions
+    comments = models.JSONField(default=list)  # Store comments as a list
